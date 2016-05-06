@@ -3,6 +3,8 @@ package data;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
+// all the game objects ie: player, enemy etc... extend this abstract class
+
 public abstract class GameObject {
 	
 	protected int x, y, width, height, speedX, speedY;

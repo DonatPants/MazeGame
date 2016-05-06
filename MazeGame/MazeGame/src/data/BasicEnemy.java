@@ -11,6 +11,7 @@ public class BasicEnemy extends GameObject{
 	private Maze maze;
 	private int moveSpeed;
 
+	// constructor
 	public BasicEnemy(int x, int y, int width, int height, ID id, Maze maze) {
 		super(x, y, width, height, id);
 		this.maze = maze;
@@ -19,28 +20,27 @@ public class BasicEnemy extends GameObject{
 	}
 
 	@Override
+	
 	public void tick() {
-		// TODO Auto-generated method stub
 		
 		if (moveSpeed <= 0) {
 			moveSpeed = 30;
-			//Location destination = path.pop();
-			//super.x = destination.getI() * (Game.WIDTH/Game.TILES_WIDE);
-			//super.y = destination.getJ() * (Game.HEIGHT/Game.TILES_HIGH);
+			Location destination = path.pop(); // get the location we need to go to next
+			super.x = destination.getI() * (Game.WIDTH/Game.TILES_WIDE); // set the x and y values to the location we want to go to
+			super.y = destination.getJ() * (Game.HEIGHT/Game.TILES_HIGH);
 		}
+		else 
+			moveSpeed--;
 	}
 
 	@Override
 	public void render(Graphics g) {
-		g.setColor(Color.MAGENTA);
-		//g.drawOval(super.x, super.y, super.width, super.height);
+		g.setColor(Color.MAGENTA); 
 		g.fillOval(super.x, super.y, super.width, super.height);
-		//g.fillRect(super.x, super.y, super.width, super.height);
 	}
 
 	@Override
 	public Rectangle getBounds() {
 		return new Rectangle((int)super.x, (int)super.y, super.width, super.height);
 	}
-	
 }

@@ -31,20 +31,20 @@ public class Game extends Canvas implements Runnable{
 	private Spawn spawn;
 
 	public Game() {
-		this.maze = new Maze(TILES_WIDE, TILES_HIGH);
-		this.handler = new Handler(this, this.maze);
-		new Window(WIDTH + 6, HEIGHT + 28, title, this);
-		this.player = new Player(this.maze.getStart().getI() * (WIDTH/TILES_WIDE), this.maze.getStart().getJ() * (HEIGHT/TILES_HIGH), ID.Player, PLAYER_WIDTH, PLAYER_HEIGHT, this.handler, this.maze.getMap(), this);
-		this.handler.addObject(this.player);
-		this.KI = new KeyInput(this.player);
+		this.maze = new Maze(TILES_WIDE, TILES_HIGH); // generate a new maze with a random map
+		this.handler = new Handler(this, this.maze); // new handler to update all the game objects
+		new Window(WIDTH + 6, HEIGHT + 28, title, this); // create the game window
+		this.player = new Player(this.maze.getStart().getI() * (WIDTH/TILES_WIDE), this.maze.getStart().getJ() * (HEIGHT/TILES_HIGH), ID.Player, PLAYER_WIDTH, PLAYER_HEIGHT, this.handler, this.maze.getMap(), this); // new player at the starting position
+		this.handler.addObject(this.player); // add the player to the handler so that it could be updated
+		this.KI = new KeyInput(this.player); // add key input for movement, needs the player cus he moves via keyboard input
 		this.addKeyListener(this.KI);
 		
-		this.spawn = new Spawn(this.handler);
-		this.hud = new HUD();
+		this.spawn = new Spawn(this.handler); // spawner to handle the spawning of mobs
+		this.hud = new HUD(); // HUD stores: health, money, time it took to complete each stage
 		finished = false;
 		this.solving = 20;
 		this.count = 0;
-		this.path = this.maze.path(this.maze.getStart(), this.maze.getEnd());
+		this.path = this.maze.path(this.maze.getStart(), this.maze.getEnd()); // path from the start to the end *** (PROBBLY SOMETHING WRONG HERE) ***
 		/*
 		for (Location location : this.maze.path(this.maze.getStart(), this.maze.getEnd())) {
 			System.out.println(location.toString());
@@ -116,9 +116,9 @@ public class Game extends Canvas implements Runnable{
 		Graphics g = bs.getDrawGraphics();
 		
 		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, WIDTH, HEIGHT);
+		g.fillRect(0, 0, WIDTH, HEIGHT); // create a black background
 		
-		this.maze.render(g);
+		this.maze.render(g); 
 		this.handler.render(g);
 		
 		g.dispose();
@@ -153,9 +153,14 @@ public class Game extends Canvas implements Runnable{
 			newMaze();
 		}
 		else
-			this.handler.tick();
+			this.handler.tick(); // handler handlers ticking all the game objects
 	}
-	
+	/**
+	 * @param var a value
+	 * @param min a bottom limit
+	 * @param max an upper limit
+	 * @return the value closest to the given value between the two limits
+	 */
 	public static int clamp(int var, int min, int max) {
 		if (var >= max)
 			return max;
@@ -164,6 +169,8 @@ public class Game extends Canvas implements Runnable{
 		return var;
 	}
 	
+	/** generate a new maze
+	 */
 	public void newMaze() {
 		System.out.println("creating new maze...");
 		this.removeKeyListener(this.KI);

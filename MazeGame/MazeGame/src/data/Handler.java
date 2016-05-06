@@ -4,6 +4,8 @@ import java.awt.Graphics;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+// all of the game objects should be put into the LinkedList<GameObject> objects so that the handler can update and render everything at once
+
 public class Handler {
 
 	LinkedList<GameObject> objects = new LinkedList<GameObject>();
@@ -48,7 +50,9 @@ public class Handler {
 		objects.clear();
 		addObject(new Player(this.maze.getStart().getI() * (Game.WIDTH/Game.TILES_WIDE), this.maze.getStart().getJ() * (Game.HEIGHT/Game.TILES_HIGH), ID.Player, Game.PLAYER_WIDTH, Game.PLAYER_HEIGHT, this, this.maze.getMap(), this.game));
 	}
-	
+	/** moves the player to the specified location *** (there might be something wrong here but it could be omething else cusing this to fail) ***
+	 * @param loc the location to move the player to
+	 */
 	public void updatePlayerLocation(Location loc) {
 		for (GameObject go : objects) 
 			if (go.id == ID.Player) {
@@ -56,6 +60,7 @@ public class Handler {
 				go.setY(loc.getJ() * (Game.HEIGHT/Game.TILES_HIGH));
 			}
 	}
+	// this probably doesn't work as intended
 	public Player getPlayer() {
 		for (GameObject go : objects) 
 			if (go.id == ID.Player)

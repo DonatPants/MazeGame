@@ -2,6 +2,8 @@ package data;
 
 import java.util.Stack;
 
+// stores money, time it took to pass each maze, health
+
 public class HUD {
 
 	private int health, level, money;
