@@ -1,0 +1,239 @@
+package data;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Stack;
+
+public class Maze {
+	
+	private ID[][] map;
+	private Location start, end;
+	private int width, height, treasureAmount;
+	
+	public Maze(int width, int height) {
+		this.width = width;
+		this.height = height;
+		this.treasureAmount = 10;
+		generateNewMap();
+	}
+	// generates an empty maze map
+	private void emptyMap() {
+		for (int i=0; i< this.map.length; i++)
+			for (int j = 0; j < this.map[i].length; j++)
+				this.map[i][j] = ID.Wall;
+	}
+	// fills the map randomly to create a perfect map
+	public void randomMazeMap(int i, int j) {
+		ArrayList<Location> posibleLocations = possibleLocations(i, j);
+		if (!posibleLocations.isEmpty()) {
+			Collections.shuffle(posibleLocations);
+			for (Location location : posibleLocations) {
+				if (this.map[location.getI()][location.getJ()] == ID.Wall) { 
+					if (location.getI() == 0 || location.getJ() == 0 || location.getI() == this.map.length - 1 || location.getJ() == this.map[0].length - 1) {
+						if (i == 0 || j == 0 || i == this.map.length - 1 || j == this.map[0].length - 1) {
+							this.map[(i + location.getI())/2][(j + location.getJ())/2] = ID.Path;
+							this.map[location.getI()][location.getJ()] = ID.Path;
+							randomMazeMap(location.getI(), location.getJ());
+						}
+				    }
+					else
+					{
+						this.map[(i + location.getI())/2][(j + location.getJ())/2] = ID.Path;
+						this.map[location.getI()][location.getJ()] = ID.Path;
+						randomMazeMap(location.getI(), location.getJ());
+					}
+				}
+			}
+		}
+	}
+	
+	// returns all the other Locations that we can go from here that are inside the map and are not already taken
+	private ArrayList<Location> possibleLocations(int i, int j) {
+		ArrayList<Location> options = new ArrayList<Location>();
+		if(inMap(i + 2, j))
+			if (map[i+2][j] != ID.Path)
+				options.add(new Location(i + 2, j));
+		if(inMap(i - 2, j))
+			if (map[i-2][j] != ID.Path)
+				options.add(new Location(i - 2, j));
+		if(inMap(i, j + 2))
+			if (map[i][j+2] != ID.Path)
+				options.add(new Location(i, j + 2));
+		if(inMap(i, j - 2))
+			if (map[i][j-2] != ID.Path)
+				options.add(new Location(i, j - 2));
+		return options;
+			
+	}
+	private boolean inMap(int i, int j) {
+		return i < this.map.length && i >= 0 && j < this.map[0].length && j >= 0;
+	}
+	
+	public void printMap() {
+		for (int i=0; i< this.map.length; i++) {
+			for (int j = 0; j < this.map[i].length; j++)
+				System.out.print(this.map[i][j] + " ");
+			System.out.println();
+		}
+	}
+	
+	public void generateNewMap() {
+		/* 0 - wall
+		 * 1 - path
+		 * 2 - start
+		 * 3 - end
+		 * 4 - treasure
+		 * 5 - enemy spawn
+		 */
+		this.map = new ID[this.width][this.height];
+		this.emptyMap();
+		this.randomMazeMap(0, 0);
+		this.map[0][1] = ID.Start;
+		for (int i=0; i< this.map.length; i++)
+			for (int j = 0; j < this.map[i].length; j++)
+				if (i == 0 || j == 0 || i == this.map.length - 1 || j == this.map[0].length - 1)
+					this.map[i][j] = ID.Wall;
+		for (int i=0; i<= 1; i++)
+			for (int j = 0; j < this.map[i].length; j++)
+				if (map[i][j] == ID.Path) {
+					this.map[i][j] = ID.Start;
+					start = new Location(i,j);
+				}
+		for (int i=0; i< this.map.length; i++)
+			for (int j = 0; j <= 1; j++)
+				if (map[i][j] == ID.Path) {
+					this.map[i][j] = ID.Start;
+					start = new Location(i,j);
+				}
+		this.map[width - 2][height - 3] = ID.End;
+		end = new Location(width - 2, height - 3);
+		populateTreasures();
+	}
+	
+	public void render(Graphics g) {
+		for (int i=0; i< map.length; i++)
+			for (int j = 0; j < map[i].length; j++) {
+				if (map[i][j] == ID.Wall) {
+					g.setColor(Color.WHITE);
+					g.fillRect(i *  Game.WIDTH/Game.TILES_WIDE, j* Game.HEIGHT/Game.TILES_HIGH, Game.WIDTH/Game.TILES_WIDE, Game.HEIGHT/Game.TILES_HIGH);
+				}
+				else if (map[i][j] == ID.Path) {
+					g.setColor(Color.GRAY);
+					g.fillRect(i * Game.WIDTH/Game.TILES_WIDE, j* Game.HEIGHT/Game.TILES_HIGH, Game.WIDTH/Game.TILES_WIDE, Game.HEIGHT/Game.TILES_HIGH);
+				}
+				else if (map[i][j] == ID.Start) {
+					g.setColor(Color.YELLOW);
+					g.fillRect(i * Game.WIDTH/Game.TILES_WIDE, j* Game.HEIGHT/Game.TILES_HIGH, Game.WIDTH/Game.TILES_WIDE, Game.HEIGHT/Game.TILES_HIGH);
+				}
+				else if (map[i][j] == ID.End) {
+					g.setColor(Color.GREEN);
+					g.fillRect(i * Game.WIDTH/Game.TILES_WIDE, j* Game.HEIGHT/Game.TILES_HIGH, Game.WIDTH/Game.TILES_WIDE, Game.HEIGHT/Game.TILES_HIGH);
+				}
+				else if (map[i][j] == ID.Treasure) {
+					g.setColor(new Color(0xE5C100));
+					g.fillRect(i * Game.WIDTH/Game.TILES_WIDE, j* Game.HEIGHT/Game.TILES_HIGH, Game.WIDTH/Game.TILES_WIDE, Game.HEIGHT/Game.TILES_HIGH);
+				}
+			}
+	}
+	
+	public ArrayList<Location> allPathes() {
+		ArrayList<Location> pathes = new ArrayList<Location>();
+		for (int i=0; i< map.length; i++)
+			for (int j = 0; j < map[i].length; j++)
+				if (this.map[i][j] == ID.Path)
+					pathes.add(new Location(i, j));
+		return pathes;
+	}
+	
+	public void populateTreasures() {
+		int count = 0;
+		ArrayList<Location> pathes = allPathes();
+		Collections.shuffle(pathes);
+		for (Location location : pathes) {
+			if (count == this.treasureAmount)
+				break;
+			map[location.getI()][location.getJ()] = ID.Treasure;
+			count++;
+			if (count == this.treasureAmount)
+				break;
+		}
+	}
+	
+	public Stack<Location> toStack(ArrayList<Location> loc) {
+		Stack<Location> s = new Stack<Location>();
+		for (Location location : loc) {
+			s.push(location);
+		}
+		return s;
+	}
+	
+	public Stack<Location> path(Location currentLocation, Location destination) {
+		ID[][] tempMap = new ID[this.map.length][this.map[0].length];
+		for (int i = 0; i < tempMap.length; i++) {
+			for (int j = 0; j < tempMap[0].length; j++) {
+				tempMap[i][j] = this.map[i][j];
+			}
+		}
+		Stack<Location> s =new Stack<Location>();
+		return path(currentLocation, destination, s, tempMap);
+	}
+	
+	public Stack<Location> path(Location currentLocation, Location destination, Stack<Location> s, ID[][] map) {
+		Stack<Location> temp;
+		if (currentLocation.toString().equals(destination.toString())) 
+			return s;
+		ArrayList<Location> posibleLocations = possibleLocationsSlove(currentLocation.getI(), currentLocation.getJ(), map);
+		if (!posibleLocations.isEmpty())
+			for (Location location : posibleLocations) {
+				map[location.getI()][location.getJ()] = ID.Passed;
+				s.push(location);
+				temp = path(location, destination, s, map);
+				if (temp != null)
+					return temp;
+				map[location.getI()][location.getJ()] = ID.Path;
+			}
+		else
+			s.pop();
+		return null;
+	}
+	
+	private ArrayList<Location> possibleLocationsSlove(int i, int j, ID[][] map) {
+		ArrayList<Location> options = new ArrayList<Location>();
+		if(inMap(i + 1, j))
+			if (map[i+1][j] == ID.Path || map[i+1][j] == ID.End)
+				options.add(new Location(i + 1, j));
+		if(inMap(i - 1, j))
+			if (map[i-1][j] == ID.Path || map[i-1][j] == ID.End)
+				options.add(new Location(i - 1, j));
+		if(inMap(i, j + 1))
+			if (map[i][j+1] == ID.Path || map[i][j+1] == ID.End)
+				options.add(new Location(i, j + 1));
+		if(inMap(i, j - 1))
+			if (map[i][j-1] == ID.Path || map[i][j-1] == ID.End)
+				options.add(new Location(i, j - 1));
+		return options;
+			
+	}
+	
+	public ID[][] getMap() {
+		return map;
+	}
+
+	public void setMap(ID[][] map) {
+		this.map = map;
+	}
+	public Location getStart() {
+		return start;
+	}
+	public void setStart(Location start) {
+		this.start = start;
+	}
+	public Location getEnd() {
+		return end;
+	}
+	public void setEnd(Location end) {
+		this.end = end;
+	}
+}

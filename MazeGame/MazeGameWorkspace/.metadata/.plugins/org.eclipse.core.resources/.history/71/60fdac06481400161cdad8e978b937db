@@ -1,0 +1,208 @@
+package data;
+
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferStrategy;
+import java.util.Stack;
+
+
+public class Game extends Canvas implements Runnable{
+
+	private static final long serialVersionUID = -6112428091888191314L;
+	// CHANGE RESOLUTION HERE
+	
+	//public static final int WIDTH = 720, HEIGHT = 480, TILES_WIDE = 60, TILES_HIGH = 40, PLAYER_WIDTH = 6, PLAYER_HEIGHT = 6; // tiny maze
+	public static final int WIDTH = 200, HEIGHT = 200, TILES_WIDE = 10, TILES_HIGH = 10, PLAYER_WIDTH = 5, PLAYER_HEIGHT = 5; // small maze
+	//public static final int WIDTH = 1440, HEIGHT = 960, TILES_WIDE = 120, TILES_HIGH = 80, PLAYER_WIDTH = 8, PLAYER_HEIGHT = 8; // large maze
+	//public static final int WIDTH = 720, HEIGHT = 480, TILES_WIDE = 60, TILES_HIGH = 40, PLAYER_WIDTH = 6, PLAYER_HEIGHT = 6; // medium maze
+	public static final String title="Donat Pants Game";
+
+	private Thread thread;
+	private Handler handler;
+	private boolean running, finished;
+	private Maze maze;
+	private Player player;
+	private KeyInput KI; // used to get the keyboard input
+	private int count; // counts the ticks that a maze took to complete, used to calculate time
+	private int solving;
+	private HUD hud;
+	private Stack<Location> path;
+	private Spawn spawn;
+
+	public Game() {
+		this.maze = new Maze(TILES_WIDE, TILES_HIGH); // generate a new maze with a random map
+		this.handler = new Handler(this, this.maze); // new handler to update all the game objects
+		new Window(WIDTH + 6, HEIGHT + 28, title, this); // create the game window
+		this.player = new Player(this.maze.getStart().getI() * (WIDTH/TILES_WIDE), this.maze.getStart().getJ() * (HEIGHT/TILES_HIGH), ID.Player, PLAYER_WIDTH, PLAYER_HEIGHT, this.handler, this.maze.getMap(), this); // new player at the starting position
+		this.handler.addObject(this.player); // add the player to the handler so that it could be updated
+		this.KI = new KeyInput(this.player); // add key input for movement, needs the player cus he moves via keyboard input
+		this.addKeyListener(this.KI);
+		
+		this.spawn = new Spawn(this.handler); // spawner to handle the spawning of mobs
+		this.hud = new HUD(); // HUD stores: health, money, time it took to complete each stage
+		finished = false;
+		this.solving = 20;
+		this.count = 0;
+		this.path = this.maze.path(this.maze.getStart(), this.maze.getEnd()); // path from the start to the end *** (PROBBLY SOMETHING WRONG HERE) ***
+		
+		//for (Location location : this.maze.path(this.maze.getStart(), this.maze.getEnd())) {
+		//	System.out.println(location.toString());
+		//}
+		
+	}
+
+	/** starts the game, sets running to true
+	 */
+	public synchronized void start() {
+		this.thread = new Thread(this);
+		thread.start();
+		running = true;
+	}
+
+	/** stops the game, sets running to false
+	 */
+	public synchronized void stop() {
+		try {
+			thread.join();
+			running = false;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/** main function to run the game, implements Runnable
+	 */
+	public void run() {
+		this.requestFocus();
+		long lastTime = System.nanoTime();
+		double amountOfTicks = 60.0;
+		double ns = 1000000000 / amountOfTicks;
+		double delta = 0;
+		long timer = System.currentTimeMillis();
+		@SuppressWarnings("unused")
+		int frames = 0;
+
+		while(running) {
+			long now = System.nanoTime();
+			delta += (now - lastTime) / ns;
+			lastTime = now;
+			while(delta >=1) {
+				tick();
+				delta--;
+			}
+
+			if(running)
+				render();
+			frames++;
+
+			if(System.currentTimeMillis() - timer > 1000) {
+				timer += 1000;
+				//System.out.println("FPS: "+ frames);
+				frames = 0;
+			}
+		}
+		stop();
+	}
+
+	private void render() {
+		// TODO Auto-generated method stub
+		BufferStrategy bs = this.getBufferStrategy();
+		if (bs == null) {
+			this.createBufferStrategy(3);
+			return;
+		}
+
+		Graphics g = bs.getDrawGraphics();
+		
+		g.setColor(Color.BLACK);
+		g.fillRect(0, 0, WIDTH, HEIGHT); // create a black background
+		
+		this.maze.render(g); 
+		this.handler.render(g);
+		
+		g.dispose();
+		bs.show();
+	}
+
+	private void tick() {
+		/*
+		if (count % 50 == 0 && !this.path.isEmpty()) { // does update the player location, but does not update the graphics, this.render() doesn't help
+			Location loc = this.path.pop();
+			this.handler.updatePlayerLocation(loc);
+			System.out.print ("player location = " + this.handler.getPlayer().toString());
+			System.out.println(" now going to " + loc);
+		}
+		*/
+		/*
+		this.solving--;
+		if (this.solving <= 0 && !path.isEmpty()) {
+			System.out.println("(" + this.KI.getPlayer().getX() + " , " + this.KI.getPlayer().getY() + ") **");
+			System.out.println("(" + (this.KI.getPlayer().getX() * (WIDTH/TILES_WIDE)) + "&");
+			System.out.println("(" + path.peek().getI() + "&&");
+			System.out.println("(" + (path.peek().getI() - (this.KI.getPlayer().getX() * (WIDTH/TILES_WIDE))) + " , " + (path.peek().getJ() - (this.KI.getPlayer().getY() * (HEIGHT/TILES_HIGH))) + ") *");
+			this.handler.getPlayer().setSpeedX(path.peek().getI() - this.KI.getPlayer().getX() * (WIDTH/TILES_WIDE));
+			this.handler.getPlayer().setSpeedY(path.pop().getJ() - this.KI.getPlayer().getY() * (HEIGHT/TILES_HIGH));
+			this.player.tick();
+			this.solving = 20;
+		}
+		*/
+		this.count++;
+		// TODO Auto-generated method stub
+		if (this.finished) {
+			newMaze();
+		}
+		else
+			this.handler.tick(); // handler handlers ticking all the game objects
+	}
+	/**
+	 * @param var a value
+	 * @param min a bottom limit
+	 * @param max an upper limit
+	 * @return the value closest to the given value between the two limits
+	 */
+	public static int clamp(int var, int min, int max) {
+		if (var >= max)
+			return max;
+		if (var <= min)
+			return min;
+		return var;
+	}
+	
+	/** generate a new maze
+	 */
+	public void newMaze() {
+		System.out.println("creating new maze...");
+		this.removeKeyListener(this.KI);
+		this.maze.generateNewMap();
+		this.handler.setMaze(this.maze);
+		handler.clearEnemies();
+		this.KI = new KeyInput(this.handler.getPlayer());
+		this.addKeyListener(this.KI);
+		hud.pushTime((float)count/60.0f);
+		System.out.println("this maze took " + count/60.0f + " seconds, you now have " + this.hud.getMoney() + " money");
+		count = 0;
+		this.finished = false;
+	}
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		new Game();
+	}
+
+	public boolean isFinished() {
+		return finished;
+	}
+
+	public void setFinished(boolean finished) {
+		this.finished = finished;
+	}
+
+	public HUD getHud() {
+		return hud;
+	}
+
+	public void setHud(HUD hud) {
+		this.hud = hud;
+	}
+}
